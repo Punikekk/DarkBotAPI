@@ -2,6 +2,7 @@ package eu.darkbot.impl.galaxy;
 
 import eu.darkbot.api.game.galaxy.GalaxyGate;
 import eu.darkbot.api.game.galaxy.GateInfo;
+import eu.darkbot.api.game.galaxy.SpinResult;
 import eu.darkbot.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -13,9 +14,9 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 public class GalaxyInfoImpl implements eu.darkbot.api.game.galaxy.GalaxyInfo {
-    private final SpinResultImpl spinResult = new SpinResultImpl(this);
     private final Map<GalaxyGate, GateInfo> gates = new HashMap<>();
-
+    private final Map<SpinResultImpl.ItemType, SpinResultImpl.SpinInfoImpl> itemCache = new HashMap<>();
+    public SpinResult spinResult;
     private int money, samples, energyCost, spinSalePercentage;
     private boolean spinOnSale, galaxyGateDay, bonusRewardsDay;
 
@@ -59,17 +60,13 @@ public class GalaxyInfoImpl implements eu.darkbot.api.game.galaxy.GalaxyInfo {
         }
     }
 
-    public SpinResultImpl getSpinResult() {
-        return spinResult;
-    }
-
     private void updateItems(Element rootElement) {
         GalaxyGate gate = GalaxyGate.of(XmlUtils.getChildElement(rootElement, "mode").getTextContent());
         if (gate == null) gate = GalaxyGate.ALPHA;
 
         Stream<Element> itemStream = XmlUtils.streamOf(XmlUtils.getChildElement(rootElement, "items").getElementsByTagName("item"));
 
-        this.spinResult.update(itemStream, gate);
+        this.spinResult = new SpinResultImpl(itemStream, this, itemCache, gate);
     }
 
     private void updateGates(NodeList gates) {
